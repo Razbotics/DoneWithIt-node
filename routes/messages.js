@@ -15,13 +15,13 @@ const schema = {
   message: Joi.string().required(),
 };
 
+const mapUser = (userId) => {
+  const user = usersStore.getUserById(userId);
+  return { id: user.id, name: user.name };
+};
+
 router.get("/", auth, (req, res) => {
   const messages = messagesStore.getMessagesForUser(req.user.userId);
-
-  const mapUser = (userId) => {
-    const user = usersStore.getUserById(userId);
-    return { id: user.id, name: user.name };
-  };
 
   const resources = messages.map((message) => ({
     id: message.id,
@@ -52,9 +52,13 @@ router.post("/", [auth, validateWith(schema)], async (req, res) => {
   });
 
   const { expoPushToken } = targetUser;
+  const toUser = mapUser(req.user.userId);
 
   if (Expo.isExpoPushToken(expoPushToken))
-    await sendPushNotification(expoPushToken, message);
+    await sendPushNotification(expoPushToken, {
+      title: "Message from " + toUser.name,
+      body: message,
+    });
 
   res.status(201).send();
 });
