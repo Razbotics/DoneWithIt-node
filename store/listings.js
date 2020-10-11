@@ -1,5 +1,17 @@
 const listings = [
   {
+    id: 202,
+    title: "AMD Pc for sale",
+    images: [{ fileName: "pc" }],
+    price: 1000,
+    categoryId: 3,
+    userId: 3,
+    location: {
+      latitude: 19.005499,
+      longitude: 73.118253,
+    },
+  },
+  {
     id: 201,
     title: "Red jacket",
     images: [{ fileName: "jacket1" }],

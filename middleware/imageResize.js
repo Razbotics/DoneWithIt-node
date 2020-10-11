@@ -1,8 +1,9 @@
 const sharp = require("sharp");
 const path = require("path");
+const config = require("config");
 const fs = require("fs");
 
-const outputFolder = "public/assets";
+const outputFolder = config.get("mediaDir") + "/media-serve/assets";
 
 module.exports = async (req, res, next) => {
   const images = [];

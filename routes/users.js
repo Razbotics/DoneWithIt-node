@@ -1,30 +1,42 @@
 const express = require("express");
 const router = express.Router();
-const Joi = require("joi");
-const usersStore = require("../store/users");
-const validateWith = require("../middleware/validation");
+const auth = require("../middleware/auth");
+const _ = require("lodash");
+const bcrypt = require("bcrypt");
+const { User, validate } = require("../models/user");
+const { Listing } = require("../models/listing");
 
-const schema = {
-  name: Joi.string().required().min(2),
-  email: Joi.string().email().required(),
-  password: Joi.string().required().min(5),
-};
+router.get("/:id", auth, async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).send("Invalid user ID");
 
-router.post("/", validateWith(schema), (req, res) => {
-  const { name, email, password } = req.body;
-  if (usersStore.getUserByEmail(email))
-    return res
-      .status(400)
-      .send({ error: "A user with the given email already exists." });
+  const listings = await Listing.find({ userId: user._id }).countDocuments();
 
-  const user = { name, email, password };
-  usersStore.addUser(user);
-
-  res.status(201).send(user);
+  res.send({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    listings: listings,
+  });
 });
 
-router.get("/", (req, res) => {
-  res.send(usersStore.getUsers());
+router.post("/", async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  let user = await User.findOne({ email: req.body.email });
+  if (user) return res.status(400).send("User already registered.");
+
+  user = new User(_.pick(req.body, ["name", "email", "password"]));
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
+  await user.save();
+
+  const token = user.generateAuthToken();
+
+  return res
+    .header("x-auth-token", token)
+    .send(_.pick(user, ["_id", "name", "email"]));
 });
 
 module.exports = router;
