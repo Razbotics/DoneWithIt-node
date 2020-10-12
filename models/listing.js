@@ -5,6 +5,7 @@ const multer = require("multer");
 const config = require("config");
 
 const Location = new mongoose.Schema({
+  _id: false,
   latitude: {
     type: Number,
     required: true,

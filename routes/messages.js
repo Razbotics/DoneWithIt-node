@@ -1,65 +1,77 @@
 const express = require("express");
 const router = express.Router();
-const Joi = require("joi");
 const { Expo } = require("expo-server-sdk");
 
-const usersStore = require("../store/users");
-const listingsStore = require("../store/listings");
-const messagesStore = require("../store/messages");
+const { User } = require("../models/user");
+const { Listing } = require("../models/listing");
+const { Messages, validate } = require("../models/messages");
 const sendPushNotification = require("../utilities/pushNotifications");
 const auth = require("../middleware/auth");
-const validateWith = require("../middleware/validation");
 
-const schema = {
-  listingId: Joi.number().required(),
-  message: Joi.string().required(),
+const mapUser = async (userId) => {
+  const user = await User.findById(userId);
+  return { _id: user._id, name: user.name };
 };
 
-const mapUser = (userId) => {
-  const user = usersStore.getUserById(userId);
-  return { id: user.id, name: user.name };
+const getResources = (messages) => {
+  const promises = messages.map(async (msg) => {
+    return {
+      _id: msg._id,
+      listingId: msg.listingId,
+      message: msg.message,
+      dateTime: msg.dateTime,
+      fromUser: await mapUser(msg.fromUserId),
+      toUser: await mapUser(msg.toUserId),
+    };
+  });
+  return Promise.all(promises);
 };
 
-router.get("/", auth, (req, res) => {
-  const messages = messagesStore.getMessagesForUser(req.user.userId);
+router.get("/", auth, async (req, res) => {
+  const messages = await Messages.find({ toUserId: req.user._id }).select(
+    "-__v"
+  );
+  if (!messages) return res.status(400).send({ error: "Invalid fromUserId." });
 
-  const resources = messages.map((message) => ({
-    id: message.id,
-    listingId: message.listingId,
-    dateTime: message.dateTime,
-    content: message.content,
-    fromUser: mapUser(message.fromUserId),
-    toUser: mapUser(message.toUserId),
-  }));
+  const resources = await getResources(messages);
 
   res.send(resources);
 });
 
-router.post("/", [auth, validateWith(schema)], async (req, res) => {
-  const { listingId, message } = req.body;
+router.delete("/:id", auth, async (req, res) => {
+  const message = await Messages.findByIdAndDelete({ _id: req.params.id });
+  if (!message) return res.status(400).send({ error: "Invalid message ID." });
 
-  const listing = listingsStore.getListing(listingId);
+  res.send(message);
+});
+
+router.post("/", auth, async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const listing = await Listing.findById(req.body.listingId);
   if (!listing) return res.status(400).send({ error: "Invalid listingId." });
 
-  const targetUser = usersStore.getUserById(parseInt(listing.userId));
+  const targetUser = await User.findById(listing.userId);
   if (!targetUser) return res.status(400).send({ error: "Invalid userId." });
 
-  messagesStore.add({
-    fromUserId: req.user.userId,
+  const message = new Messages({
+    fromUserId: req.user._id,
     toUserId: listing.userId,
-    listingId,
-    content: message,
+    listingId: listing._id,
+    message: req.body.message,
+    dateTime: Date.now(),
   });
 
   const { expoPushToken } = targetUser;
-  const toUser = mapUser(req.user.userId);
 
   if (Expo.isExpoPushToken(expoPushToken))
     await sendPushNotification(expoPushToken, {
-      title: "Message from " + toUser.name,
-      body: message,
+      title: "Message from " + req.user.name,
+      body: req.body.message,
     });
 
+  message.save();
   res.status(201).send();
 });
 

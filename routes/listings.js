@@ -34,7 +34,7 @@ router.post(
     const { error } = validate(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
     if (!user) return res.status(400).send("Invalid user ID");
 
     const category = await Categories.findById(req.body.categoryId);
