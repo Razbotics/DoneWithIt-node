@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const config = require("config");
+const fs = require("fs");
 const imageResize = require("../middleware/imageResize");
 const {
   Listing,
@@ -11,6 +12,18 @@ const {
 } = require("../models/listing");
 const { Categories } = require("../models/categories");
 const { User } = require("../models/user");
+
+const outputFolder = config.get("mediaDir") + "/media-serve/assets";
+
+const deleteImages = async (images) => {
+  const delFull = images.map(async (image) => {
+    fs.unlink(outputFolder + "/" + image.fileName + "_full.jpg", () => {})
+  });
+  const delThumb = images.map(async (image) => {
+    fs.unlink(outputFolder + "/" + image.fileName + "_thumb.jpg", () => {})
+  });
+  return Promise.all([...delFull, ...delThumb]);
+}
 
 router.get("/", async (req, res) => {
   const listings = await Listing.find().select("-__v");
@@ -24,6 +37,14 @@ router.get("/:id", auth, async (req, res) => {
     return res.status(404).send("The listing with the given ID was not found.");
   const resource = listingMapper(listing);
   res.send(resource);
+});
+
+router.delete("/:id", auth, async (req, res) => {
+  const listing = await Listing.findByIdAndDelete(req.params.id).select("-__v");
+  if (!listing)
+    return res.status(404).send("The listing with the given ID was not found.");
+  await deleteImages(listing.images);
+  res.send(listing);
 });
 
 router.post(
