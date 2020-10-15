@@ -1,4 +1,5 @@
 const Joi = require("joi");
+Joi.objectId = require("joi-objectid")(Joi);
 const mongoose = require("mongoose");
 const path = require("path");
 const multer = require("multer");
@@ -56,15 +57,18 @@ const Listing = mongoose.model(
   })
 );
 
-function validateListing(listing) {
-  const schema = {
-    title: Joi.string().min(5).max(255).required(),
-    description: Joi.string().max(255).allow(""),
-    price: Joi.number().required().min(1).max(10000),
-    categoryId: Joi.objectId().required(),
-    location: Joi.string().required(),
-  };
+const schema = {
+  title: Joi.string().min(5).max(255).required(),
+  description: Joi.string().max(255).allow(""),
+  price: Joi.number().required().min(1).max(10000),
+  categoryId: Joi.objectId().required(),
+  location: Joi.object({
+    latitude: Joi.number().required(),
+    longitude: Joi.number().required(),
+  }).required(),
+};
 
+function validateListing(listing) {
   return Joi.validate(listing, schema);
 }
 
@@ -91,5 +95,6 @@ const mapper = (listing) => {
 
 exports.Listing = Listing;
 exports.validate = validateListing;
+exports.schema = schema;
 exports.upload = upload;
 exports.listingMapper = mapper;

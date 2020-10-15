@@ -1,4 +1,4 @@
 {
-  "host": "http://192.168.0.106:9000",
+  "host": "http://192.168.0.106:9500",
   "db": "mongodb://localhost/doneWithIt"
 }

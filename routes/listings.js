@@ -4,12 +4,8 @@ const auth = require("../middleware/auth");
 const config = require("config");
 const fs = require("fs");
 const imageResize = require("../middleware/imageResize");
-const {
-  Listing,
-  upload,
-  listingMapper,
-  validate,
-} = require("../models/listing");
+const validateWith = require("../middleware/validation");
+const { Listing, upload, listingMapper, schema } = require("../models/listing");
 const { Categories } = require("../models/categories");
 const { User } = require("../models/user");
 
@@ -17,13 +13,13 @@ const outputFolder = config.get("mediaDir") + "/media-serve/assets";
 
 const deleteImages = async (images) => {
   const delFull = images.map(async (image) => {
-    fs.unlink(outputFolder + "/" + image.fileName + "_full.jpg", () => {})
+    fs.unlink(outputFolder + "/" + image.fileName + "_full.jpg", () => {});
   });
   const delThumb = images.map(async (image) => {
-    fs.unlink(outputFolder + "/" + image.fileName + "_thumb.jpg", () => {})
+    fs.unlink(outputFolder + "/" + image.fileName + "_thumb.jpg", () => {});
   });
   return Promise.all([...delFull, ...delThumb]);
-}
+};
 
 router.get("/", async (req, res) => {
   const listings = await Listing.find().select("-__v");
@@ -49,12 +45,14 @@ router.delete("/:id", auth, async (req, res) => {
 
 router.post(
   "/",
-  [auth, upload.array("images", config.get("maxImageCount")), imageResize],
+  [
+    auth,
+    upload.array("images", config.get("maxImageCount")),
+    validateWith(schema),
+    imageResize,
+  ],
 
   async (req, res) => {
-    const { error } = validate(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-
     const user = await User.findById(req.user._id);
     if (!user) return res.status(400).send("Invalid user ID");
 

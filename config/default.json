@@ -3,5 +3,5 @@
   "delay": 1000,
   "maxImageCount": 3,
   "mediaDir": "/home/razbotics/Public",
-  "port": "9000"
+  "port": "9500"
 }
