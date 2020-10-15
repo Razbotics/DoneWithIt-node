@@ -19,6 +19,9 @@ require("./startup/config")();
 require("./startup/validation")();
 
 const port = config.get("port");
+const host = config.get("host");
+
+winston.info(`Hosting on ${host}...`);
 const server = app.listen(port, () =>
   winston.info(`Listening on port ${port}...`)
 );
