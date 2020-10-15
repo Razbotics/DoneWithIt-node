@@ -2,6 +2,5 @@
   "jwtPrivateKey": "unsecureKey",
   "delay": 1000,
   "maxImageCount": 3,
-  "mediaDir": "/home/razbotics/Public",
   "port": "9500"
 }

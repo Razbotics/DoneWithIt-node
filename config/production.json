@@ -1,3 +1,5 @@
 {
-  "host": "https://ec2-3-138-179-227.us-east-2.compute.amazonaws.com/"
+  "host": "https://ec2-3-138-179-227.us-east-2.compute.amazonaws.com/",
+  "db": "mongodb://localhost/doneWithIt",
+  "mediaDir": "/home/ubuntu/DoneWithIt"
 }

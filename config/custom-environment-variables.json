@@ -1,4 +1,3 @@
 {
-  "jwtPrivateKey": "doneWithIt_jwtPrivateKey",
-  "mediaDir": "/home/ubuntu"
+  "jwtPrivateKey": "doneWithIt_jwtPrivateKey"
 }
