@@ -1,5 +1,5 @@
 {
-  "host": "http://3.138.222.105",
+  "host": "https://donewithit.razbotics.com",
   "db": "mongodb://localhost/doneWithIt",
   "mediaDir": "/home/ubuntu/DoneWithIt"
 }
